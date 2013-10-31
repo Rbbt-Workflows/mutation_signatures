@@ -1,0 +1,9 @@
+- action_card = ActionCard.new do
+  - input :exome, :boolean, "Restrict to Exome", true
+    
+= action_card_render action_card do
+  - exome = false unless defined? exome
+  - job = MutationSignatures.job(:rainfall_plot, list_id, :mutations => list, :organism => list.organism, :exome_only => exome)
+  - job.run
+  %img(src="/#{[MutationSignatures, :rainfall_plot, job.name, 'file', 'rainfall.png'] * "/"}")
+ 

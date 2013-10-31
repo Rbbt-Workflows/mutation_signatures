@@ -1,0 +1,15 @@
+- action_card = ActionCard.new do
+  - input :subset, :select, "Mutation subset", :all_mutations, :select_options => [:all_mutations, :relevant_mutations, :damaging_mutations]
+  - input :k, :integer, "Number of factors to produce"
+  - input :exome_only, :boolean, "Exome sequences?", true
+    
+- action_card.require :subset, :k
+= action_card_render action_card do
+  - selected_mutations = entity.send(subset.to_sym)
+  - cohort = {}
+  - entity.cohort.each{|g| cohort[g.jobname] = g.subset(selected_mutations)}
+  - job = MutationSignatures.job(:nmf_profile_plots, entity, :cohort => cohort, :k => k, :organism => entity.organism, :watson => entity.watson, :exome_only => exome_only)
+  - job.run
+  %img(src="/#{[MutationSignatures.to_s, :nmf_profile_plots, job.name, 'file', 'factor_profile.png'] * "/"}")
+  %img(src="/#{[MutationSignatures.to_s, :nmf_profile_plots, job.name, 'file', 'sample_profile.png'] * "/"}")
+ 

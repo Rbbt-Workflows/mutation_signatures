@@ -1,0 +1,4 @@
+= action_card_render ActionCard.new do
+  = table do
+    - MutationSignatures.job(:mutation_context, list_id, :mutations => list.clean_annotations, :organism => list.organism, :watson => list.watson).run
+ 

@@ -1,0 +1,5 @@
+= action_card_render ActionCard.new do
+  = table do
+    - counts = Misc.counts(list.collect{|l| next if l.base.nil? or l.reference.nil?; (%(C T).include?(l.reference.upcase) ? [l.reference, l.base] : [Bio::Sequence::NA.new(l.reference).complement.upcase, Bio::Sequence::NA.new(l.base).complement.reverse.upcase]).collect{|seq| case; when seq =~ /^\-/; "del"; when (seq =~ /^\+/ or seq.length > 1); "ins"; else seq; end;} * ">" }.compact)
+    - TSV.setup(counts, :key_field => "Change", :fields => ["Count"], :type => :single, :cast => :to_i)
+    - counts

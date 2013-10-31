@@ -1,0 +1,15 @@
+- action_card = ActionCard.new do
+  - input :subset, :select, "Mutation subset", :all_mutations, :select_options => [:all_mutations, :relevant_mutations, :damaging_mutations]
+  - input :scale, :select, "Scale", 'none', :select_options => [:none, :sample, :channel, :both]
+  - input :exome_only, :boolean, "Limit to exome bases", true
+
+- action_card.require :subset, :exome_only, :scale
+= action_card_render action_card do
+  - k = 3
+  - selected_mutations = entity.send(subset.to_sym)
+  - cohort = {}
+  - entity.cohort.each{|g| cohort[g.jobname] = g.subset(selected_mutations)}
+  - job = MutationSignatures.job(:signature_plots, entity, :cohort => cohort, :k => k, :organism => entity.organism, :watson => entity.watson, :scale => scale, :exome_only => exome_only)
+  - job.run
+  %img(src="/#{[MutationSignatures, :signature_plots, job.name, 'file', 'heatmap.png'] * "/"}")
+ 
