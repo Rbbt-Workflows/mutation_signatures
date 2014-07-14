@@ -24,6 +24,7 @@ module MutationSignatures
     result = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context change"], :type => :single)
     chr_mutations.each do |chr, list|
       begin
+        chr = chr.sub('chr','')
         Organism[organism]["chromosome_" << chr].open do |chr_file|
           positions = list.collect{|mutation| chr, pos, *rest = mutation.split(":"); pos.to_i}
           position_context = {}
