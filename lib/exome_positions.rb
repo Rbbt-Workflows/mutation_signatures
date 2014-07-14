@@ -38,7 +38,6 @@ module MutationSignatures
         end
         exon_ranges.pop_filter
         exon_ranges.reset_filters
-        Open.write('/tmp/ex', exome_positions.collect{|v| v*":"} * "\n")
         fwt = FixWidthTable.new :memory, value_size, false
         fwt.add_point exome_positions
 
