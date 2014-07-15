@@ -26,6 +26,7 @@ MutationSignatures=/$PWD filter="*"{
    }
    entity=entity{
     Study=Study{
+     cohort_signatures.haml
      EM_signatures.haml
      NMF_signatures.haml
      mutation_heatmap.haml
