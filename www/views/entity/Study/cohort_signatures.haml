@@ -1,13 +1,18 @@
-= table do
-  - cohort = {}
-  - entity.samples.each do |sample|
-    - cohort[sample] = sample.mutations
+- action_card = ActionCard.new do
+  - input :exome_only, :boolean, "Exome sequences?"
+    
+- action_card.require :exome_only
+= action_card_render action_card do
+  = table do
+    - cohort = {}
+    - entity.samples.each do |sample|
+      - cohort[sample] = sample.mutations
 
-  - MutationSignatures.job(:cohort_signatures, entity, :cohort => cohort, :organism => entity.organism, :watson => entity.watson).run
+    - MutationSignatures.job(:cohort_signatures, entity, :cohort => cohort, :organism => entity.organism, :watson => entity.watson).run
 
-= table do
-  - cohort = {}
-  - entity.samples.each do |sample|
-    - cohort[sample] = sample.mutations
+  = table do
+    - cohort = {}
+    - entity.samples.each do |sample|
+      - cohort[sample] = sample.mutations
 
-  - MutationSignatures.job(:mutation_oportunities, entity.organism).run
+    - MutationSignatures.job(:mutation_oportunities, entity.organism, :exome_only => exome_only).run

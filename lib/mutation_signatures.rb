@@ -62,7 +62,7 @@ module MutationSignatures
     Organism.chromosomes(organism).tsv.keys.each do |chromosome|
       begin
         chr_file = Organism[organism]['chromosome_' << chromosome].open
-      rescue
+      rescue Exception
         Log.debug("Error processing mutation oportunities: " << $!.message)
         next
       end
