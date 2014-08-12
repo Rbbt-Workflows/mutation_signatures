@@ -1,11 +1,28 @@
 MutationSignatures=/$PWD filter="*"{
  workflow.rb
  lib=lib{
-  exome_positions.rb
-  mutation_distances.rb
-  mutation_signatures.rb
+  mutation_signatures=mutation_signatures{
+   tasks=tasks{
+    exome_positions.rb
+    mutation_distances.rb
+    mutation_signatures.rb
+   }
+  }
+  sample=sample{
+   tasks=tasks{
+    mutation_signatures.rb
+   }
+  }
+  study=study{
+   tasks=tasks{
+    mutation_signatures.rb
+   }
+  }
  }
  share=share{
+  rbbt_commands=rbbt_commands{
+   bootstrap
+  }
   R=R{
    plots.R
   }
