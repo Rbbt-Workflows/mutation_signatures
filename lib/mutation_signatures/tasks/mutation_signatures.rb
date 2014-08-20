@@ -21,29 +21,37 @@ module MutationSignatures
       chr_mutations[chr] << mutation
     end
 
-    result = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context change"], :type => :single)
-    chr_mutations.each do |chr, list|
+    result = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context change"], :type => :single, :organism => organism)
+    TSV.traverse chr_mutations, :bar => "Mutation context", :into => result do |chr, list|
+      chr = chr.sub('chr','')
+      positions = list.collect{|mutation| chr, pos, *rest = mutation.split(":"); pos.to_i }
       begin
-        chr = chr.sub('chr','')
-        Organism[organism]["chromosome_" << chr].open do |chr_file|
-          positions = list.collect{|mutation| chr, pos, *rest = mutation.split(":"); pos.to_i}
-          position_context = {}
-          positions.sort.each do |pos|
-            chr_file.seek(pos-2)
-            context = chr_file.read(3)
-            position_context[pos] = context
-          end
-          list.each do |mutation|
-            chr, pos, *rest =mutation.split(":")
-            pos = pos.to_i
-            context = position_context[pos]
-            result[mutation] = context
-          end
-        end
+        chr_file = Organism[organism]["chromosome_" << chr].open 
       rescue Exception
         Log.debug("Skipping #{ chr }: #{$!.message}")
         next
       end
+      begin
+        position_context = {}
+        positions.sort.each do |pos|
+          chr_file.seek(pos-2)
+          context = chr_file.read(3)
+          position_context[pos] = context
+        end
+      rescue Exception
+        Log.debug("Error processing #{ chr }: #{$!.message}")
+        next
+      ensure 
+        chr_file.close
+      end
+      results = list.collect do |mutation|
+        chr, pos, *rest =mutation.split(":")
+        pos = pos.to_i
+        context = position_context[pos]
+        [mutation, context]
+      end
+      results.extend MultipleResult
+      results
     end
     result
   end
@@ -123,26 +131,27 @@ module MutationSignatures
     tsv
   end
 
+
   input :mutations, :array, "Mutations"
   input :organism, :string, "Organism code"
   input :watson, :boolean, "Mutations reported in Watson strand", true
   task :mutation_context => :tsv do |mutations, organism, watson|
-
     if not watson
       log :watson, "Turning mutations to watson"
       mutations = Sequence.job(:to_watson, name, :mutations => mutations, :organism => organism).run
     end
 
-    log :mutation_context, "Getting surrounding bases for each mutation"
-    mutation_context = MutationSignatures.context(mutations, organism)
+    log :context_change_count, "Getting surrounding bases for each mutation"
+    context_change_count = MutationSignatures.context(mutations, organism)
 
     log :changes, "Turning changes into context changes"
-    changes = mutations.collect do |m| 
+    tsv = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context Change"], :type => :single, :namespace => organism)
+    stream = TSV.traverse mutations, :into => tsv do |m| 
       base = m.split(":")[2]
-      next unless %w(A C T G).include? base
+      next unless %w(A C T G -).include? base
 
       begin
-        context = mutation_context[m]
+        context = context_change_count[m]
       rescue
         Log.debug("Exception extracting context: " << $!.message)
         next
@@ -154,17 +163,28 @@ module MutationSignatures
         base = Bio::Sequence::NA.new(base).complement.upcase
       end
 
-      [context, base] * ">"
+      [m, [context, base] * ">"]
     end
+  end
+
+  dep :mutation_context
+  task :context_changes => :array do |mutations, organism, watson|
+    TSV.traverse step(:mutation_context), :into => :stream do |mutation, change|
+      change
+    end
+  end
+
+  dep :context_changes
+  task :context_change_count => :tsv do 
 
     log :counts, "Counting changes"
-    counts = Misc.counts(changes.compact).dup
+    counts = Misc.counts(step(:context_changes).load.compact).dup
 
     counts = TSV.setup(counts, :key_field => "Change", :fields => ["Count"], :type => :single, :cast => :to_i)
 
     counts
   end
-  export_asynchronous :mutation_context
+  export_asynchronous :context_change_count
 
 
   input :cohort, :tsv, "Genomic Sample and Genomic Mutations. Example row: 'Sample01{TAB}10:12345678:A{TAB}X:5454322:G'"
@@ -175,7 +195,7 @@ module MutationSignatures
 
     signatures = TSV.setup({}, :key_field => "Change", :fields => samples, :type => :list, :cast => :to_i)
     cohort.each do |sample, mutations|
-      signature = MutationSignatures.job(:mutation_context, sample, :mutations => mutations.flatten, :organism => organism, :watson => watson).exec
+      signature = MutationSignatures.job(:context_change_count, sample, :mutations => mutations.flatten, :organism => organism, :watson => watson).exec
 
       sample_pos = samples.index sample
       signature.each do |change,count|

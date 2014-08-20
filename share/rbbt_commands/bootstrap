@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-mutations_hg19 = Rbbt.examples.mutation_context["10_000"].mutations.find(:lib).list
-mutations_hg18 = Rbbt.examples.mutation_context.may2009.mutations.find(:lib).list
+mutations_hg19 = Rbbt.examples.context_change_count["10_000"].mutations.find(:lib).list
+mutations_hg18 = Rbbt.examples.context_change_count.may2009.mutations.find(:lib).list
 
 require 'rbbt/workflow'
 
@@ -22,10 +22,12 @@ Organism.organism_codes.each do |code|
 end
 
 jobs = []
-mutations.keys.each do |organism|
-  job = MutationSignatures.job(:mutation_oportunities, organism, :exome_only => true)
+mutations.each do |organism,mutations|
+  job = MutationSignatures.job(:mutation_oportunities, organism.sub('/','>'), :exome_only => true)
   jobs << job
-  job = MutationSignatures.job(:mutation_oportunities, organism, :exome_only => false)
+  job = MutationSignatures.job(:mutation_oportunities, organism.sub('/','>'), :exome_only => false)
+  jobs << job
+  job = MutationSignatures.job(:mutation_context, organism.sub('/','>'), :mutations => mutations)
   jobs << job
 end
 
