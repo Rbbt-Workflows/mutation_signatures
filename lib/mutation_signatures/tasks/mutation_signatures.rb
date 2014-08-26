@@ -16,6 +16,7 @@ module MutationSignatures
   def self.context(mutations, organism)
     chr_mutations = {}
     mutations.each do |mutation|
+      next if mutation.empty?
       chr, *rest = mutation.split(":")
       chr_mutations[chr] ||= []
       chr_mutations[chr] << mutation
@@ -146,7 +147,7 @@ module MutationSignatures
 
     log :changes, "Turning changes into context changes"
     tsv = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context Change"], :type => :single, :namespace => organism)
-    stream = TSV.traverse mutations, :into => tsv do |m| 
+    TSV.traverse mutations, :into => tsv do |m| 
       base = m.split(":")[2]
       next unless %w(A C T G -).include? base
 
@@ -165,6 +166,8 @@ module MutationSignatures
 
       [m, [context, base] * ">"]
     end
+
+    tsv
   end
 
   dep :mutation_context
