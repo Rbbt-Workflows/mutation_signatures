@@ -6,7 +6,7 @@ RBBT_SOFTWARE_DIR="$2"
 source "$INSTALL_HELPER_FILE"
 
 name='EMu'
-url="ftp://ftp.sanger.ac.uk/pub/teams/153/EMu/v1.2/EMu_v1.2.tar.gz"
+url="ftp://ftp.sanger.ac.uk/pub/teams/153/EMu/EMu-v1.5.tar.gz"
 
 
 install_src "$name" "$url"
