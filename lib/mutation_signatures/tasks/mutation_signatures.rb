@@ -2,10 +2,10 @@ require 'rbbt'
 require 'rbbt/workflow'
 require 'rbbt/util/misc'
 
-Workflow.require_workflow "Genomics"
-
-require 'rbbt/sources/organism'
-require 'rbbt/entity/genomic_mutation'
+#Workflow.require_workflow "Genomics"
+#
+#require 'rbbt/sources/organism'
+#require 'rbbt/entity/genomic_mutation'
 require 'set'
 require 'bio'
 require File.join(File.dirname(__FILE__), 'exome_positions')
@@ -181,7 +181,7 @@ module MutationSignatures
   task :context_change_count => :tsv do 
 
     log :counts, "Counting changes"
-    counts = Misc.counts(step(:context_changes).load.compact).dup
+    counts = Misc.counts(step(:context_changes).join.load.compact).dup
 
     counts = TSV.setup(counts, :key_field => "Change", :fields => ["Count"], :type => :single, :cast => :to_i)
 
