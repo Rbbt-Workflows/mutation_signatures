@@ -123,10 +123,10 @@ factor_profile_plot <- function(factor_profiles){
     order = unique(sapply(sort(pasted), function(x){strsplit(x,":")[[1]][[2]]}))
     m$Change = factor(as.character(m$Change), levels=order)
 
-    p <- qplot(Change, value, data= m, fill=Base.change, color=adjacent.3 , geom='bar') + facet_grid(variable~.) + theme(axis.text.x = element_text(angle = 90))
+    p <- qplot(Change, value, data= m, fill=Base.change, color=adjacent.3 , geom='bar', stat='identity') + facet_grid(variable~.) #+ theme(axis.text.x = element_text(angle = 90))
     p <- p + scale_colour_brewer('adjacent3', palette="Set1")
 
-    p <- p + theme(axis.text.x=element_text(size=5, family = "mono"))
+    #p <- p + theme(axis.text.x=element_text(size=10, family = "mono"))
 
     p
 }
@@ -140,12 +140,13 @@ sample_profile_plot <- function(sample_profiles){
 
     str(sample_profiles.aux)
     m = melt(sample_profiles.aux)
+    str(m)
     names(m) = c("Factor", "Sample", "value")
 
     #p <- ggplot(m, aes(Sample,fill=Factor)) + geom_bar() + theme(axis.text.x = element_text(angle = 90))      
     #p <- ggplot(m, aes(Sample,fill=Factor)) + geom_bar()
     p <- ggplot() + geom_bar(data=m, aes(Sample, value, fill=Factor), stat='identity')
-    p <- p + theme(axis.text.x = element_text(angle = 90))      
-    p <- p + theme(axis.text.x=element_text(size=5))
+    #p <- p + theme(axis.text.x = element_text(angle = 90))      
+    #p <- p + theme(axis.text.x=element_text(size=5))
     p
 }

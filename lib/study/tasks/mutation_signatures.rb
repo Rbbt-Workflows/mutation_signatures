@@ -3,11 +3,15 @@ require 'sample/tasks/mutation_signatures'
 module Study
 
   dep Sample, :mutation_signature do |jobname,options|
-    Study.samples(jobname).collect do |sample|
+    jobs = Study.samples(jobname).collect do |sample|
       next unless sample.has_genotype?
       sample = [jobname, sample] * ":"
       Sample.job(:mutation_signature, sample)
     end.compact
+    Misc.bootstrap jobs do |job|
+      job.produce
+    end
+    jobs
   end
   task :cohort_signatures => :tsv do
 
@@ -27,4 +31,15 @@ module Study
 
     signatures
   end
+
+  tasks[:nmf_features] = MutationSignatures.tasks[:nmf_features]
+  tasks[:nmf_profile_plots] = MutationSignatures.tasks[:nmf_profile_plots]
+  task_dependencies[:nmf_features] = MutationSignatures.task_dependencies[:nmf_features]
+  task_dependencies[:nmf_profile_plots] = MutationSignatures.task_dependencies[:nmf_profile_plots]
+
+
+  tasks[:em_features] = MutationSignatures.tasks[:em_features]
+  tasks[:em_profile_plots] = MutationSignatures.tasks[:em_profile_plots]
+  task_dependencies[:em_features] = MutationSignatures.task_dependencies[:em_features]
+  task_dependencies[:em_profile_plots] = MutationSignatures.task_dependencies[:em_profile_plots]
 end

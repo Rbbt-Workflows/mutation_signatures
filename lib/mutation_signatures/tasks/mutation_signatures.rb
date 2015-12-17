@@ -1,11 +1,8 @@
 require 'rbbt'
 require 'rbbt/workflow'
 require 'rbbt/util/misc'
+require 'rbbt/util/R/plot'
 
-#Workflow.require_workflow "Genomics"
-#
-#require 'rbbt/sources/organism'
-#require 'rbbt/entity/genomic_mutation'
 require 'set'
 require 'bio'
 require File.join(File.dirname(__FILE__), 'exome_positions')
@@ -81,7 +78,6 @@ module MutationSignatures
       if exome_only
         log(:exome_only, "Collapsing exon ranges: #{ chromosome }")
         exon_ranges = MutationSignatures.exon_ranges_for_chr(organism)
-        iif exon_ranges
         exon_ranges.filter
         exon_ranges.add_filter("field:Chromosome Name", chromosome)
         sorted_exon_ranges = exon_ranges.sort_by("Exon Chr Start"){|v,k,all| v.to_i}.collect{|e,range| (range[0].to_i..range[1].to_i) }
@@ -103,7 +99,7 @@ module MutationSignatures
 
       chr_context = {}
       last = [nil,chr_file.getc,chr_file.getc]
-      log(:context, "Counting context events: #{ chromosome } (size #{chr_file.size})")
+      #log(:context, "Counting context events: #{ chromosome } (size #{chr_file.size})")
       while c = chr_file.getc
         last.shift
         last.push c
@@ -281,27 +277,34 @@ data = w
     height = nmf_factors.size * 0.1
     height = 50 if height > 50
     width = 7
+#    script =<<-EOF
+#source('#{Rbbt.share.R["plots.R"].find(:lib)}')
+#p <- factor_profile_plot(data)
+#rbbt.SVG.save('#{file('factor_profile.png')}', p, height=#{height}, width=#{width}, limitsize=FALSE)
+#data  = NULL
+#    EOF
+#    nmf_factors.R script
+
     script =<<-EOF
-source('#{Rbbt.share.R["plots.R"].find(:lib)}')
-p <- factor_profile_plot(data)
-ggsave('#{file('factor_profile.png')}', p, height=#{height}, width=#{width}, limitsize=FALSE)
-data  = NULL
+factor_profile_plot(data)
     EOF
-    #nmf_factors.R script
+    R::SVG.ggplotSVG(nmf_factors, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
 
     height = nmf_factors.size * 0.1
     height = 50 if height > 50
     width = nmf_samples.fields.length 
     width = 50 if width > 50
-    script =<<-EOF
-source('#{Rbbt.share.R["plots.R"].find(:lib)}')
-p <- sample_profile_plot(data)
-ggsave('#{file('sample_profile.png')}', p, height=#{height}, width=#{width},  limitsize=FALSE)
-data  = NULL
-    EOF
-    ovary_samples = nmf_samples.fields.select{|f| f =~ /squamous/i}
-    nmf_samples.slice(ovary_samples).R script
+#    script =<<-EOF
+#source('#{Rbbt.share.R["plots.R"].find(:lib)}')
+#rbbt.SVG.save('#{file('sample_profile.png')}', p, height=#{height}, width=#{width},  limitsize=FALSE)
+#data  = NULL
+#    EOF
+#    nmf_samples.R script
 
+    script =<<-EOF
+sample_profile_plot(data)
+    EOF
+    R::SVG.ggplotSVG(nmf_samples, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
 
     Open.read(file('factor_profile.png'), :mode => "rb")
   end
@@ -311,6 +314,7 @@ data  = NULL
 
   dep :cohort_signatures
   dep do |jobname, inputs| MutationSignatures.job(:mutation_oportunities, inputs[:organism].sub('/', '-'), :exome_only => inputs[:exome_only]) end
+  input :organism, :string, "Organism code", Organism.default_code("Hsa")
   input :k, :integer, "Number of spectra (0 = use BIC)", 0
   input :exome_only, :boolean, "Limit to exome bases", false
   task :em_features => :integer do |k,eo|
