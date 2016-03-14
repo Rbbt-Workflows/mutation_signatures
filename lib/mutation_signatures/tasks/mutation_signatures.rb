@@ -22,7 +22,8 @@ module MutationSignatures
     result = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context change"], :type => :single, :organism => organism)
     TSV.traverse chr_mutations, :bar => "Mutation context", :into => result do |chr, list|
       chr = chr.sub('chr','')
-      positions = list.collect{|mutation| chr, pos, *rest = mutation.split(":"); pos.to_i }
+      chr = "MT" if chr == "M"
+      positions = list.collect{|mutation| _chr, pos, *rest = mutation.split(":"); pos.to_i }
       begin
         chr_file = Organism[organism]["chromosome_" << chr].open 
       rescue Exception
@@ -130,7 +131,7 @@ module MutationSignatures
 
 
   input :mutations, :array, "Mutations"
-  input :organism, :string, "Organism code"
+  input :organism, :string, "Organism code", Organism.default_code("Hsa")
   input :watson, :boolean, "Mutations reported in Watson strand", true
   task :mutation_context => :tsv do |mutations, organism, watson|
     if not watson
@@ -150,7 +151,7 @@ module MutationSignatures
       begin
         context = context_change_count[m]
       rescue
-        Log.debug("Exception extracting context: " << $!.message)
+        Log.warn("Exception extracting context: " << $!.message)
         next
       end
       next if context.nil? or base == context[1] or context.include?("N")
@@ -167,8 +168,14 @@ module MutationSignatures
   end
 
   dep :mutation_context
-  task :context_changes => :array do |mutations, organism, watson|
+  input :snvs_only, :boolean, "Consider only SNVs and ignore Indels", true
+  task :context_changes => :array do |snvs_only|
+    bases = Set.new(%w(A C T G))
     TSV.traverse step(:mutation_context), :into => :stream do |mutation, change|
+      if snvs_only 
+        alt_allele = (Array === mutation ? mutation.first : mutation).split(":")[2]
+        next unless bases.include?(alt_allele)
+      end
       change
     end
   end
@@ -186,26 +193,33 @@ module MutationSignatures
   export_asynchronous :context_change_count
 
 
-  input :cohort, :tsv, "Genomic Sample and Genomic Mutations. Example row: 'Sample01{TAB}10:12345678:A{TAB}X:5454322:G'"
-  input :organism, :string, "Organism code"
-  input :watson, :boolean, "Mutations reported in Watson strand", true
-  task :cohort_signatures => :tsv do |cohort, organism, watson|
-    samples = cohort.keys.sort
+  #input :cohort, :tsv, "Genomic Sample and Genomic Mutations. Example row: 'Sample01{TAB}10:12345678:A{TAB}X:5454322:G'"
+  #input :organism, :string, "Organism code"
+  #input :watson, :boolean, "Mutations reported in Watson strand", true
+  #input :snv_only, :boolean, "Work only with SNVs and ignore indels", true
+  #task :cohort_signatures => :tsv do |cohort, organism, watson, snvs|
+  #  samples = cohort.keys.sort
 
-    signatures = TSV.setup({}, :key_field => "Change", :fields => samples, :type => :list, :cast => :to_i)
-    cohort.each do |sample, mutations|
-      signature = MutationSignatures.job(:context_change_count, sample, :mutations => mutations.flatten, :organism => organism, :watson => watson).exec
+  #  signatures = TSV.setup({}, :key_field => "Change", :fields => samples, :type => :list, :cast => :to_i)
+  #  cohort.each do |sample, mutations|
+  #    mutations = mutations.flatten
+  #    if snvs
+  #      bases = Set.new(%w(A C T G))
+  #      mutations = mutations.select{|m| bases.include? m.split(":")[2] } 
+  #      iii 1
+  #    end
+  #    signature = MutationSignatures.job(:context_change_count, sample, :mutations => mutations, :organism => organism, :watson => watson).exec
 
-      sample_pos = samples.index sample
-      signature.each do |change,count|
-        signatures[change] ||= [0] * samples.length
-        signatures[change][sample_pos] = count
-      end
-    end
+  #    sample_pos = samples.index sample
+  #    signature.each do |change,count|
+  #      signatures[change] ||= [0] * samples.length
+  #      signatures[change][sample_pos] = count
+  #    end
+  #  end
 
-    signatures
-  end
-  export_asynchronous :cohort_signatures
+  #  signatures
+  #end
+  #export_asynchronous :cohort_signatures
 
   dep :cohort_signatures
   dep do |jobname, inputs| MutationSignatures.job(:mutation_oportunities, inputs[:organism].sub('/', '-'), :exome_only => inputs[:exome_only]) end
