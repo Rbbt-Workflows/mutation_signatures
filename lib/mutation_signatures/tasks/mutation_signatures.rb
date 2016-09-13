@@ -9,8 +9,9 @@ require File.join(File.dirname(__FILE__), 'exome_positions')
 
 module MutationSignatures
   input :mutations, :array, "Mutations"
-  input :organism, :string, "Organism code"
+  input :organism, :string, "Organism code", "Hsa/feb2014"
   def self.context(mutations, organism)
+    raise "No organism code provided" if organism.nil? or organism.empty?
     chr_mutations = {}
     mutations.each do |mutation|
       next if mutation.empty?
