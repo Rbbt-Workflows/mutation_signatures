@@ -12,7 +12,7 @@ module MutationSignatures
   input :organism, :string, "Organism code"
   def self.context(mutations, organism)
     chr_mutations = {}
-    mutations.each do |mutation|
+    TSV.traverse mutations, :type => :array do |mutation|
       next if mutation.empty?
       chr, *rest = mutation.split(":")
       chr_mutations[chr] ||= []
@@ -20,12 +20,16 @@ module MutationSignatures
     end
 
     result = TSV.setup({}, :key_field => "Genomic Mutation", :fields => ["Context change"], :type => :single, :organism => organism)
-    TSV.traverse chr_mutations, :bar => "Mutation context", :into => result do |chr, list|
+    TSV.traverse chr_mutations.keys, :type => :array, :bar => "Mutation context", :into => result do |chr|
+      list = chr_mutations[chr]
       chr = chr.sub('chr','')
       chr = "MT" if chr == "M"
       positions = list.collect{|mutation| _chr, pos, *rest = mutation.split(":"); pos.to_i }
       begin
-        chr_file = Organism[organism]["chromosome_" << chr].open 
+        chr_filename = "chromosome_" << chr.dup
+        file = Organism.root[organism][chr_filename].find
+        next unless File.exists? file
+        chr_file = File.open(file)
       rescue Exception
         Log.debug("Skipping #{ chr }: #{$!.message}")
         next
@@ -50,6 +54,7 @@ module MutationSignatures
         [mutation, context]
       end
       results.extend MultipleResult
+
       results
     end
     result
