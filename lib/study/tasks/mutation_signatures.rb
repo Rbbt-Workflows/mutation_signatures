@@ -3,16 +3,11 @@ require 'sample/tasks/mutation_signatures'
 if Module === Study and Workflow === Study
   module Study
 
-    dep Sample, :mutation_signature do |jobname,options|
-      jobs = Study.samples(jobname).collect do |sample|
-        next unless sample.has_genotype?
-        sample = [jobname, sample] * ":"
-        Sample.job(:mutation_signature, sample)
-      end.compact
-      Misc.bootstrap jobs do |job|
-        job.produce
+    dep Sample, :mutation_signature, :compute => :bootstrap do |jobname,options|
+      study = Study.setup(jobname.dup)
+      study.genotyped_samples.collect do |sample|
+        sample.mutation_signature(:job)
       end
-      jobs
     end
     task :cohort_signatures => :tsv do
 
