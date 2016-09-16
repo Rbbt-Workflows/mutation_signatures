@@ -288,6 +288,7 @@ data = w
 
 
   dep :nmf_features
+  extension :svg
   task :nmf_profile_plots => :binary do
     nmf_factors = step(:nmf_features).file("factor_composition.tsv").tsv
     nmf_samples = step(:nmf_features).file("sample_factors.tsv").tsv
@@ -297,36 +298,23 @@ data = w
     height = nmf_factors.size * 0.1
     height = 50 if height > 50
     width = 7
-#    script =<<-EOF
-#source('#{Rbbt.share.R["plots.R"].find(:lib)}')
-#p <- factor_profile_plot(data)
-#rbbt.SVG.save('#{file('factor_profile.png')}', p, height=#{height}, width=#{width}, limitsize=FALSE)
-#data  = NULL
-#    EOF
-#    nmf_factors.R script
-
     script =<<-EOF
 factor_profile_plot(data)
     EOF
-    R::SVG.ggplotSVG(nmf_factors, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
+    svg = R::SVG.ggplotSVG(nmf_factors, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
+    Open.write(file('factor_profile.svg'), svg)
 
     height = nmf_factors.size * 0.1
     height = 50 if height > 50
     width = nmf_samples.fields.length 
     width = 50 if width > 50
-#    script =<<-EOF
-#source('#{Rbbt.share.R["plots.R"].find(:lib)}')
-#rbbt.SVG.save('#{file('sample_profile.png')}', p, height=#{height}, width=#{width},  limitsize=FALSE)
-#data  = NULL
-#    EOF
-#    nmf_samples.R script
-
     script =<<-EOF
 sample_profile_plot(data)
     EOF
-    R::SVG.ggplotSVG(nmf_samples, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
+    svg = R::SVG.ggplotSVG(nmf_samples, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
+    Open.write(file('sample_profile.svg'), svg)
 
-    Open.read(file('factor_profile.png'), :mode => "rb")
+    Open.read(file('factor_profile.svg'), :mode => "rb")
   end
   export_asynchronous :nmf_profile_plots
 

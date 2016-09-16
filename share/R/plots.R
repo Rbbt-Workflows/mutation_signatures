@@ -1,4 +1,4 @@
-library(reshape)
+library(reshape2)
 library(ggplot2)
 library(plyr)
 library(scales)
@@ -123,10 +123,10 @@ factor_profile_plot <- function(factor_profiles){
     order = unique(sapply(sort(pasted), function(x){strsplit(x,":")[[1]][[2]]}))
     m$Change = factor(as.character(m$Change), levels=order)
 
-    p <- qplot(Change, value, data= m, fill=Base.change, color=adjacent.3 , geom='bar', stat='identity') + facet_grid(variable~.) #+ theme(axis.text.x = element_text(angle = 90))
-    p <- p + scale_colour_brewer('adjacent3', palette="Set1")
-
-    #p <- p + theme(axis.text.x=element_text(size=10, family = "mono"))
+    #p <- qqplot(Change ~ value, data= m, fill=Base.change, color=adjacent.3 , geom='bar', stat='identity') + facet_grid(variable~.) #+ theme(axis.text.x = element_text(angle = 90))
+    #p <- p + scale_colour_brewer('adjacent3', palette="Set1")
+    p <- ggplot(m, aes(x=Change, y=value)) + geom_bar(stat='identity') + facet_grid(variable~.)
+    p <- p + theme(axis.text.x = element_text(angle = 90, size=10, family='mono'))      
 
     p
 }
@@ -145,8 +145,7 @@ sample_profile_plot <- function(sample_profiles){
 
     #p <- ggplot(m, aes(Sample,fill=Factor)) + geom_bar() + theme(axis.text.x = element_text(angle = 90))      
     #p <- ggplot(m, aes(Sample,fill=Factor)) + geom_bar()
-    p <- ggplot() + geom_bar(data=m, aes(Sample, value, fill=Factor), stat='identity')
-    #p <- p + theme(axis.text.x = element_text(angle = 90))      
-    #p <- p + theme(axis.text.x=element_text(size=5))
+    p <- ggplot(m, aes(x=Sample, y=value, fill=Factor)) + geom_bar(stat='identity')
+    p <- p + theme(axis.text.x = element_text(angle = 90, size=5, family='mono'))      
     p
 }
