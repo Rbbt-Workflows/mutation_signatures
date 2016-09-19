@@ -301,7 +301,7 @@ data = w
     script =<<-EOF
 factor_profile_plot(data)
     EOF
-    svg = R::SVG.ggplotSVG(nmf_factors, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
+    svg = R::SVG.ggplotSVG(nmf_factors, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib), :fast => true)
     Open.write(file('factor_profile.svg'), svg)
 
     height = nmf_factors.size * 0.1
@@ -311,7 +311,7 @@ factor_profile_plot(data)
     script =<<-EOF
 sample_profile_plot(data)
     EOF
-    svg = R::SVG.ggplotSVG(nmf_samples, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib))
+    svg = R::SVG.ggplotSVG(nmf_samples, script, height, width, :source => Rbbt.share.R["plots.R"].find(:lib), :fast => true)
     Open.write(file('sample_profile.svg'), svg)
 
     Open.read(file('factor_profile.svg'), :mode => "rb")

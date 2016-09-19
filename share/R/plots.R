@@ -133,15 +133,15 @@ factor_profile_plot <- function(factor_profiles){
 
 sample_profile_plot <- function(sample_profiles){
     mat = as.matrix(sample_profiles)
-    #mat = mat %*% diag(1/colSums(mat))
-    sample_profiles.aux = as.data.frame(mat)
+    class(mat) <- "numeric"
+    mat = mat %*% diag(1/colSums(mat))
+    #sample_profiles.aux = as.data.frame(mat)
     #sample_profiles.aux = sample_profiles
-    sample_profiles.aux$Factor = rownames(sample_profiles)
+    #sample_profiles.aux$Factor = rownames(sample_profiles)
 
-    str(sample_profiles.aux)
-    m = melt(sample_profiles.aux)
-    str(m)
+    m = melt(mat)
     names(m) = c("Factor", "Sample", "value")
+    m$value = as.numeric(m$value)
 
     #p <- ggplot(m, aes(Sample,fill=Factor)) + geom_bar() + theme(axis.text.x = element_text(angle = 90))      
     #p <- ggplot(m, aes(Sample,fill=Factor)) + geom_bar()
