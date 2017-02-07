@@ -1,6 +1,7 @@
 require 'rbbt'
 require 'rbbt/workflow'
 require 'rbbt/util/misc'
+require 'rbbt/util/R'
 require 'rbbt/util/R/plot'
 
 require 'set'
@@ -411,5 +412,39 @@ ggsave('#{file('sample_profile_assignments.png')}', p)
     Open.read(file('factor_profile.png'), :mode => 'rb')
   end
   export_asynchronous :em_profile_plots
+
+  dep :context_change_count
+  task :assign_signatures => :tsv do
+    tsv = step(:context_change_count).path.tsv :cast => :to_f
+    sum = tsv.values.flatten.inject(0){|acc,e| acc += e}
+    all_possible = %w(A C T G).collect do |pre|
+      %w(A C T G).collect do |post|
+        %w(A C T G).collect do |target|
+          %w(C T).collect do |source|
+            next if target == source
+            [pre, source, post, ">", target] * ""
+          end
+        end
+      end
+    end.flatten.compact.uniq
+
+    all_possible.each do |key|
+      tsv[key] = 0 if tsv[key].nil?
+    end
+
+    tsv.process "Count" do |v|
+      v / sum
+    end
+    tsv.fields = ["Sample"]
+    tsv = tsv.to_list.transpose
+    tsv.fields = tsv.fields.collect{|code| letters = code.split(""); [letters[0],"[", letters[1], ">", letters[4], "]", letters[2]] * ""}
+    w = tsv.R <<-EOF
+library('deconstructSigs')
+w = whichSignatures(data, "Sample")$weights
+data = w
+    EOF
+    
+    w
+  end
 
 end
