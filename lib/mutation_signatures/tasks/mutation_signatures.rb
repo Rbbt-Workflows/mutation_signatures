@@ -413,10 +413,10 @@ ggsave('#{file('sample_profile_assignments.png')}', p)
   end
   export_asynchronous :em_profile_plots
 
-  dep :context_change_count
-  task :assign_signatures => :tsv do
-    tsv = step(:context_change_count).path.tsv :cast => :to_f
-    sum = tsv.values.flatten.inject(0){|acc,e| acc += e}
+  input :changes, :tsv, "Trinucleotide changes"
+  task :assign_signatures_from_changes => :tsv do |changes|
+    tsv = changes
+    sum = tsv.values.flatten.inject(0){|acc,e| acc += e.to_f}
     all_possible = %w(A C T G).collect do |pre|
       %w(A C T G).collect do |post|
         %w(A C T G).collect do |target|
@@ -433,7 +433,7 @@ ggsave('#{file('sample_profile_assignments.png')}', p)
     end
 
     tsv.process "Count" do |v|
-      v / sum
+      v.to_f / sum
     end
     tsv.fields = ["Sample"]
     tsv = tsv.to_list.transpose
@@ -445,6 +445,12 @@ data = w
     EOF
     
     w
+  end
+
+  dep :context_change_count
+  dep MutationSignatures, :assign_signatures_from_changes, :changes => :context_change_count
+  task :assign_signatures => :tsv do
+    Step.get_stream(:assign_signatures_from_changes)
   end
 
 end
