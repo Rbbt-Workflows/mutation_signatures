@@ -31,7 +31,7 @@ module MutationSignatures
         chr_filename = "chromosome_" << chr.dup
         file = Organism.root[organism][chr_filename].find
         next unless File.exists? file
-        chr_file = File.open(file)
+        chr_file = Open.open(file)
       rescue Exception
         Log.debug("Skipping #{ chr }: #{$!.message}")
         next
