@@ -439,8 +439,8 @@ ggsave('#{file('sample_profile_assignments.png')}', p)
     tsv = tsv.to_list.transpose
     tsv.fields = tsv.fields.collect{|code| letters = code.split(""); [letters[0],"[", letters[1], ">", letters[4], "]", letters[2]] * ""}
     w = tsv.R <<-EOF
-library('deconstructSigs')
-w = whichSignatures(data, "Sample")$weights
+rbbt.require('deconstructSigs')
+w = whichSignatures(data, "Sample", signatures.ref = signatures.nature2013)$weights
 data = w
     EOF
     
@@ -450,7 +450,7 @@ data = w
   dep :context_change_count
   dep MutationSignatures, :assign_signatures_from_changes, :changes => :context_change_count
   task :assign_signatures => :tsv do
-    Step.get_stream(:assign_signatures_from_changes)
+    TSV.get_stream step(:assign_signatures_from_changes)
   end
 
 end
