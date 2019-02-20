@@ -27,6 +27,7 @@ module MutationSignatures
       chr = chr.sub('chr','')
       chr = "MT" if chr == "M"
       positions = list.collect{|mutation| _chr, pos, *rest = mutation.split(":"); pos.to_i }
+
       begin
         chr_filename = "chromosome_" << chr.dup
         file = Organism.root[organism][chr_filename].find
@@ -36,6 +37,7 @@ module MutationSignatures
         Log.debug("Skipping #{ chr }: #{$!.message}")
         next
       end
+
       begin
         position_context = {}
         positions.sort.each do |pos|
